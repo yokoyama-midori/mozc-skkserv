@@ -1,0 +1,48 @@
+# Copyright (c) 2026 mozc-skkserv contributors. BSD-3-Clause (see LICENSE).
+#
+# An SKK dictionary server (the skkserv protocol) that converts with Mozc in its
+# own process. Windows only.
+#
+# This package is copied into src/mozc_inproc of a Mozc checkout; no file of
+# Mozc is modified. Build with --check_visibility=false because this package
+# uses targets that Mozc does not export to it.
+
+load("//:build_defs.bzl", "mozc_cc_binary")
+
+package(default_visibility = ["//visibility:private"])
+
+mozc_cc_binary(
+    name = "mozc_skkserv",
+    srcs = [
+        "euc_jp.h",
+        "jisx0208_table.h",
+        "mozc_skkserv.cc",
+    ],
+    target_compatible_with = ["@platforms//os:windows"],
+    deps = [
+        "//base:init_mozc",
+        "//base:system_util",
+        "//base/strings:japanese",
+        "//base/strings:unicode",
+        "//composer:key_parser",
+        "//engine:engine_factory",
+        "//protocol:candidate_window_cc_proto",
+        "//protocol:commands_cc_proto",
+        "//session:session_handler",
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/flags:reflection",
+    ],
+)
+
+# A check program for the EUC-JP table (portable; tests/test_euc_jp.py).
+mozc_cc_binary(
+    name = "euc_jp_check",
+    srcs = [
+        "euc_jp.h",
+        "euc_jp_check.cc",
+        "jisx0208_table.h",
+    ],
+    deps = [
+        "//base/strings:unicode",
+    ],
+)

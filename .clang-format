@@ -1,0 +1,7 @@
+# The same as mozc/.clang-format: the Google style that Mozc follows.
+BasedOnStyle: Google
+
+---
+Language: Cpp
+PointerAlignment: Left
+QualifierAlignment: Left

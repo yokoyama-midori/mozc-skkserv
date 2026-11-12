@@ -1,0 +1,54 @@
+name: Build mozc_skkserv (Windows)
+# Manual trigger only.
+# Based on https://github.com/google/mozc/blob/master/.github/workflows/windows.yaml
+
+on: workflow_dispatch
+
+permissions:
+  contents: read
+
+jobs:
+  build_on_x64:
+    runs-on: windows-2025
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          submodules: true
+          persist-credentials: false
+
+      - name: Try to restore update_deps cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: mozc/src/third_party_cache
+          key: update_deps-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('mozc/src/build_tools/update_deps.py') }}
+
+      - name: Install Dependencies (LLVM, MSYS2, Ninja; no Qt)
+        shell: cmd
+        working-directory: .\mozc\src
+        run: |
+          python build_tools/update_deps.py --noqt --nowix
+
+      - name: Build
+        shell: pwsh
+        run: |
+          .\scripts\build.ps1 -Targets mozc_skkserv, euc_jp_check
+
+      - name: Test
+        shell: pwsh
+        run: |
+          python tests/test_euc_jp.py dist\euc_jp_check.exe
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python tests/test_server.py dist\mozc_skkserv.exe
+
+      - name: Upload mozc_skkserv
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: mozc_skkserv
+          path: |
+            dist/mozc_skkserv.exe
+            dist/licenses
+            scripts/start-server.ps1
+          if-no-files-found: error

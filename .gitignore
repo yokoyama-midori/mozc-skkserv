@@ -1,0 +1,4 @@
+# Files that the build makes
+/out/
+/tmp/
+/dist/
