@@ -83,8 +83,10 @@ try {
   # exported to it. No file of Mozc is modified for this.
   # --features=static_link_msvcrt: links the C/C++ runtime into the executable
   # (/MT), so the Visual C++ Redistributable is not needed.
-  bazelisk "--output_user_root=$(Join-Path $repo 'out')" build ($Targets | ForEach-Object { "//mozc_inproc:$_" }) --config release_build --check_visibility=false --features=static_link_msvcrt
-  if ($LASTEXITCODE -ne 0) { throw "bazel build failed (exit code $LASTEXITCODE)" }
+  foreach ($t in $Targets) {
+    bazelisk "--output_user_root=$(Join-Path $repo 'out')" build "//mozc_inproc:$t" --config release_build --check_visibility=false --features=static_link_msvcrt
+    if ($LASTEXITCODE -ne 0) { throw "bazel build of $t failed (exit code $LASTEXITCODE)" }
+  }
 } finally {
   Pop-Location
   foreach ($name in $savedEnv.Keys) {
