@@ -10,7 +10,7 @@
 //   "3"            host info -> "<host>/<address>/ "
 //   "4<reading> "  complete  -> "4\n" (not supported)
 //   "0"            disconnect
-// The request and the response use the encoding given by --skkserv_encoding:
+// The request and the response use the encoding given by --encoding:
 // UTF-8 (default) or EUC-JP. In the EUC-JP mode, a candidate that cannot be
 // represented in EUC-JP (for example an emoji) is left out. The conversion uses
 // its own table (euc_jp.h), not the code pages of Windows.
@@ -103,14 +103,14 @@
 
 #pragma comment(lib, "ws2_32.lib")
 
-ABSL_FLAG(int32_t, skkserv_port, 1178, "TCP port to listen on (127.0.0.1).");
-ABSL_FLAG(std::string, skkserv_encoding, "utf-8",
+ABSL_FLAG(int32_t, port, 1178, "TCP port to listen on (127.0.0.1).");
+ABSL_FLAG(std::string, encoding, "utf-8",
           "Encoding of requests and responses: utf-8 or euc-jp.");
-ABSL_FLAG(int32_t, skkserv_max_candidates, 12,
+ABSL_FLAG(int32_t, max_candidates, 12,
           "Maximum number of candidates in a response.");
-ABSL_FLAG(bool, skkserv_verbose, false,
+ABSL_FLAG(bool, verbose, false,
           "Prints the length of a reading, the number of candidates and the "
-          "time. The reading itself is never printed.");
+          "time to the standard output. The reading itself is never printed.");
 
 namespace mozc::skkserv {
 namespace {
@@ -126,6 +126,14 @@ constexpr int kMaxConnections = 16;
 // A valid request is about 250 bytes at most. Anything that grows beyond this
 // without a terminating space is not a request.
 constexpr size_t kMaxRequestBytes = 4096;
+
+// Called when the server is stopped (Ctrl+C, closing the console window).
+// Returning FALSE lets the default handler end the process.
+BOOL WINAPI OnConsoleControl(DWORD) {
+  std::fprintf(stdout, "%s: stopped\n", kVersion);
+  std::fflush(stdout);
+  return FALSE;
+}
 
 bool IsAcceptedReadingChar(char32_t cp) {
   return (cp >= 0x3041 && cp <= 0x3096) || (cp >= 0x309B && cp <= 0x309E) ||
@@ -457,13 +465,20 @@ int RunServer(ServerContext* context) {
   if (::bind(listener, reinterpret_cast<sockaddr*>(&address),
              sizeof(address)) != 0 ||
       ::listen(listener, SOMAXCONN) != 0) {
-    std::fprintf(stderr, "cannot listen on 127.0.0.1:%d (%d)\n", context->port,
-                 ::WSAGetLastError());
+    const int error = ::WSAGetLastError();
+    if (error == WSAEADDRINUSE || error == WSAEACCES) {
+      std::fprintf(stderr, "port %d is in use or reserved (%d)\n",
+                   context->port, error);
+    } else {
+      std::fprintf(stderr, "cannot listen on 127.0.0.1:%d (%d)\n",
+                   context->port, error);
+    }
     return 1;
   }
   std::fprintf(stdout, "%s: listening on 127.0.0.1:%d (%s)\n", kVersion,
                context->port, context->euc_jp ? "euc-jp" : "utf-8");
   std::fflush(stdout);
+  ::SetConsoleCtrlHandler(OnConsoleControl, TRUE);
 
   for (;;) {
     SOCKET client = ::accept(listener, nullptr, nullptr);
@@ -547,20 +562,20 @@ int main(int argc, char** argv) {
   mozc::SystemUtil::SetUserProfileDirectory(mozc::skkserv::kNoProfileDirectory);
   mozc::InitMozc(argv[0], &argc, &argv);
 
-  const int port = absl::GetFlag(FLAGS_skkserv_port);
+  const int port = absl::GetFlag(FLAGS_port);
   if (port <= 0 || port > 65535) {
-    std::fprintf(stderr, "invalid --skkserv_port: %d\n", port);
+    std::fprintf(stderr, "invalid --port: %d\n", port);
     return 1;
   }
-  const int max_candidates = absl::GetFlag(FLAGS_skkserv_max_candidates);
+  const int max_candidates = absl::GetFlag(FLAGS_max_candidates);
   if (max_candidates <= 0) {
-    std::fprintf(stderr, "invalid --skkserv_max_candidates\n");
+    std::fprintf(stderr, "invalid --max_candidates\n");
     return 1;
   }
   const std::optional<mozc::skkserv::WireEncoding> encoding =
-      mozc::skkserv::ParseEncoding(absl::GetFlag(FLAGS_skkserv_encoding));
+      mozc::skkserv::ParseEncoding(absl::GetFlag(FLAGS_encoding));
   if (!encoding) {
-    std::fprintf(stderr, "invalid --skkserv_encoding (use utf-8 or euc-jp)\n");
+    std::fprintf(stderr, "invalid --encoding (use utf-8 or euc-jp)\n");
     return 1;
   }
 
@@ -583,6 +598,6 @@ int main(int argc, char** argv) {
   }
   context.max_candidates = static_cast<size_t>(max_candidates);
   context.port = port;
-  context.verbose = absl::GetFlag(FLAGS_skkserv_verbose);
+  context.verbose = absl::GetFlag(FLAGS_verbose);
   return mozc::skkserv::RunServer(&context);
 }

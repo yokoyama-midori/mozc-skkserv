@@ -32,7 +32,7 @@ def free_port():
 def start(name, *flags):
     port = free_port()
     process = subprocess.Popen(
-        [EXE, f'--skkserv_port={port}', *flags],
+        [EXE, f'--port={port}', *flags],
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     SERVERS[name] = (port, process)
 
@@ -268,11 +268,11 @@ def setUpModule():
         raise unittest.SkipTest(f'The server was not found: {EXE}')
     # tearDownModule() is not called if setUpModule() fails.
     unittest.addModuleCleanup(stop_servers)
-    start('utf8', '--skkserv_max_candidates=1000')
+    start('utf8', '--max_candidates=1000')
     start('limit')
-    start('utf8_max3', '--skkserv_max_candidates=3')
-    start('euc', '--skkserv_encoding=euc-jp', '--skkserv_max_candidates=1000')
-    start('euc_max4', '--skkserv_encoding=euc-jp', '--skkserv_max_candidates=4')
+    start('utf8_max3', '--max_candidates=3')
+    start('euc', '--encoding=euc-jp', '--max_candidates=1000')
+    start('euc_max4', '--encoding=euc-jp', '--max_candidates=4')
     for port, _ in SERVERS.values():
         wait_ready(port)
 
@@ -280,6 +280,7 @@ def setUpModule():
 if __name__ == '__main__':
     if len(sys.argv) > 1:
         EXE = sys.argv.pop(1)
+    EXE = os.path.abspath(EXE)
     if not os.path.exists(EXE):
         sys.exit(f'The server was not found: {EXE}')
     unittest.main(verbosity=2)
