@@ -30,7 +30,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ---
 
-This repository does not contain Mozc itself. Mozc is a git submodule (mozc/)
-and is licensed separately; see LICENSE.mozc and licenses/THIRD_PARTY_NOTICES.txt.
-The executable built from this repository contains Mozc, its dictionary data
-and other libraries, whose licenses are listed there.
+This software uses Mozc (https://github.com/google/mozc), which is licensed
+separately. The executable contains Mozc, its dictionary data and other
+libraries. Their licenses are in LICENSE.mozc and THIRD_PARTY_NOTICES.txt (in
+the licenses/ directory of the source repository).

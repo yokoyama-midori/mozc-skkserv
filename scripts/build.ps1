@@ -7,7 +7,8 @@
 #    would set. The wrapper is skipped because it does not quote paths.
 #    The environment variables and the current directory that this script
 #    changes are restored when it ends.
-# 3. Copies the executables of -Targets to -OutDir (default: <repo>\dist).
+# 3. Copies the executables of -Targets to -OutDir (default: <repo>\dist). For
+#    mozc_skkserv, the licenses are copied there too.
 #
 # Requirements:
 #  * The repository path contains only ASCII characters and no spaces
@@ -118,10 +119,7 @@ foreach ($t in $Targets) {
 }
 
 if ($Targets -contains 'mozc_skkserv') {
-  # The licenses go with the server (it contains Mozc and its dictionary data).
-  $licDir = Join-Path $OutDir 'licenses'
-  New-Item -ItemType Directory -Force $licDir | Out-Null
-  Copy-Item -LiteralPath (Join-Path $repo 'LICENSE') -Destination $licDir -Force
-  Copy-Item -LiteralPath (Join-Path $repo 'LICENSE.mozc') -Destination $licDir -Force
-  Copy-Item -LiteralPath (Join-Path $repo 'licenses\THIRD_PARTY_NOTICES.txt') -Destination $licDir -Force
+  Copy-Item -LiteralPath (Join-Path $repo 'LICENSE') -Destination $OutDir -Force
+  Copy-Item -LiteralPath (Join-Path $repo 'LICENSE.mozc') -Destination $OutDir -Force
+  Copy-Item -LiteralPath (Join-Path $repo 'licenses\THIRD_PARTY_NOTICES.txt') -Destination $OutDir -Force
 }
