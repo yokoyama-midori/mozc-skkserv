@@ -256,26 +256,25 @@ class EucJp(unittest.TestCase):
         self.assertEqual(lookup('euc', 'カタカナ'.encode('euc_jp')), b'4\n')
 
 
+def stop_servers():
+    for _, process in SERVERS.values():
+        process.kill()
+    for _, process in SERVERS.values():
+        process.wait()
+
+
 def setUpModule():
     if not os.path.exists(EXE):
         raise unittest.SkipTest(f'The server was not found: {EXE}')
+    # tearDownModule() is not called if setUpModule() fails.
+    unittest.addModuleCleanup(stop_servers)
     start('utf8', '--skkserv_max_candidates=1000')
     start('limit')
     start('utf8_max3', '--skkserv_max_candidates=3')
     start('euc', '--skkserv_encoding=euc-jp', '--skkserv_max_candidates=1000')
     start('euc_max4', '--skkserv_encoding=euc-jp', '--skkserv_max_candidates=4')
-    # tearDownModule() is not called if setUpModule() fails.
-    unittest.addModuleCleanup(tearDownModule)
     for port, _ in SERVERS.values():
         wait_ready(port)
-
-
-def tearDownModule():
-    for _, process in SERVERS.values():
-        process.kill()
-    for _, process in SERVERS.values():
-        process.wait()
-    SERVERS.clear()
 
 
 if __name__ == '__main__':

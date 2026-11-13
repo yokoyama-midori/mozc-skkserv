@@ -48,7 +48,6 @@ class EucJpCodec {
         }
       }
     }
-    // Characters that Windows uses for the same cells.
     struct Alias {
       char32_t cp;
       uint16_t cell;

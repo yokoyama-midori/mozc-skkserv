@@ -6,8 +6,7 @@
 # The server creates no folder and no file, and by default the script writes no
 # log. Give -LogDir to get one.
 #
-# The server stops at logoff or reboot. This script does not start it
-# automatically.
+# The server stops at logoff or reboot.
 param(
   [int]$Port = 1178,
   [ValidateSet('utf-8', 'euc-jp')]

@@ -127,8 +127,6 @@ constexpr int kMaxConnections = 16;
 // without a terminating space is not a request.
 constexpr size_t kMaxRequestBytes = 4096;
 
-// hiragana, the spacing voiced/semi-voiced marks (U+309B, U+309C), the
-// iteration marks and the prolonged sound mark.
 bool IsAcceptedReadingChar(char32_t cp) {
   return (cp >= 0x3041 && cp <= 0x3096) || (cp >= 0x309B && cp <= 0x309E) ||
          cp == 0x30FC;
@@ -158,7 +156,6 @@ std::vector<std::string> ExtractCandidates(const commands::Output& output,
   if (segments.empty()) {
     return {};
   }
-  // The reading of the first segment, and its half-width katakana form.
   const commands::Preedit::Segment& first = output.preedit().segment(0);
   const std::string key = first.has_key() ? first.key() : std::string();
   // Kana without a half-width form (such as ゐ) stay full-width in the result
@@ -206,9 +203,7 @@ class Converter {
  public:
   explicit Converter(SessionHandler* handler) : handler_(handler) {}
 
-  // Converts a reading (UTF-8, already checked to be hiragana only) and returns
-  // all the candidates in UTF-8. Conversions are serialized because
-  // SessionHandler is not thread-safe.
+  // Conversions are serialized because SessionHandler is not thread-safe.
   std::vector<std::string> Convert(const std::string& reading) {
     std::lock_guard<std::mutex> lock(mutex_);
 
@@ -226,7 +221,7 @@ class Converter {
         break;
       }
     }
-    std::optional<commands::Output> output;  // the output of the space key
+    std::optional<commands::Output> output;
     if (ok) {
       output = SendKey(*session_id, {"space"}, "");
     }
@@ -408,7 +403,7 @@ void ServeConnection(SOCKET client, ServerContext* context) {
           if (buffer.size() > kMaxRequestBytes) {
             running = false;  // not a request; do not keep growing
           }
-          break;  // wait for the rest of the request
+          break;
         }
         const std::string reading = buffer.substr(1, end - 1);
         buffer.erase(0, end + 1);

@@ -42,9 +42,8 @@ if (-not (Test-Path (Join-Path $src 'third_party\llvm\bin\clang-cl.exe'))) {
 }
 if (-not $OutDir) { $OutDir = Join-Path $repo 'dist' }
 
-# 1. overlay (new files only; no file of Mozc is modified).
-#    The folder in the Mozc tree is made from scratch so that no file that was
-#    removed from the overlay remains.
+# The folder in the Mozc tree is made from scratch so that no file that was
+# removed from the overlay remains.
 $pkg = Join-Path $src 'mozc_inproc'
 if (Test-Path -LiteralPath $pkg) {
   Remove-Item -LiteralPath $pkg -Recurse -Force
@@ -52,7 +51,6 @@ if (Test-Path -LiteralPath $pkg) {
 New-Item -ItemType Directory -Force $pkg | Out-Null
 Copy-Item -Path (Join-Path $repo 'overlay\mozc_inproc\*') -Destination $pkg -Force
 
-# 2. environment
 $savedEnv = @{}
 foreach ($name in 'Path', 'BAZELISK_SKIP_WRAPPER', 'BAZEL_LLVM', 'BAZEL_SH', 'BAZEL_VC', 'TEMP', 'TMP') {
   $savedEnv[$name] = [Environment]::GetEnvironmentVariable($name, 'Process')
@@ -65,7 +63,19 @@ try {
   }
   if (-not $VcDir) {
     $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
-    $inst = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+    # The C++ tools for the architecture of this machine (the build is native).
+    $tools = if ([Runtime.InteropServices.RuntimeInformation]::OSArchitecture -eq 'Arm64') {
+      'Microsoft.VisualStudio.Component.VC.Tools.ARM64'
+    } else {
+      'Microsoft.VisualStudio.Component.VC.Tools.x86.x64'
+    }
+    # Visual Studio 2022 first, then 2026: the same order as Mozc's
+    # build_tools\vs_util.py.
+    $inst = $null
+    foreach ($versions in '[17,18)', '[18,19)') {
+      $inst = & $vswhere -latest -products * -requires $tools -version $versions -property installationPath
+      if ($inst) { break }
+    }
     if (-not $inst) { throw 'Visual Studio with the C++ tools was not found. Pass -VcDir.' }
     $VcDir = Join-Path $inst 'VC'
   }
@@ -80,7 +90,7 @@ try {
 
   Set-Location $src
   # --check_visibility=false: the new package uses Mozc targets that are not
-  # exported to it. No file of Mozc is modified for this.
+  # exported to it.
   # --features=static_link_msvcrt: links the C/C++ runtime into the executable
   # (/MT), so the Visual C++ Redistributable is not needed.
   foreach ($t in $Targets) {
@@ -94,7 +104,6 @@ try {
   }
 }
 
-# 3. output
 New-Item -ItemType Directory -Force $OutDir | Out-Null
 foreach ($t in $Targets) {
   $from = Join-Path $src "bazel-bin\mozc_inproc\$t.exe"

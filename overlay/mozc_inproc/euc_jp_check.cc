@@ -42,7 +42,6 @@ std::vector<std::string> Split(const std::string& line) {
   return fields;
 }
 
-// UTF-8 -> EUC-JP the way the server does it.
 std::optional<std::string> Encode(const mozc::skkserv::EucJpCodec& codec,
                                   const std::string& utf8_hex) {
   const std::string utf8 = HexToBytes(utf8_hex);
