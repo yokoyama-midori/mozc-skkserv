@@ -1,40 +1,30 @@
 # mozc-skkserv
 
-mozc-skkserv は、SKK クライアントから受け取ったひらがなの読みを [Mozc](https://github.com/google/mozc) で変換し、候補を返す Windows 用の SKK 辞書サーバです。
+[Mozc](https://github.com/google/mozc) で変換する Windows 用の SKK 辞書サーバです。
 
-## 特徴
-
-- ループバック(`127.0.0.1`)で待ち受け、外部サーバと通信せずローカルで変換します。
-- UTF-8/EUC-JP に対応しています。
+外部サーバと通信せずローカルで変換します。UTF-8/EUC-JP に対応しています。
 
 ## 使い方
 
-起動には `scripts\start-server.ps1` を使います。
-
 ```powershell
-.\scripts\start-server.ps1                                # UTF-8, ポート 1178
-.\scripts\start-server.ps1 -Port 1182 -Encoding euc-jp    # EUC-JP, ポート 1182
+.\mozc_skkserv.exe                                # UTF-8, ポート 1178
+.\mozc_skkserv.exe --port=1182 --encoding=euc-jp  # EUC-JP, ポート 1182
 ```
-
-サーバは非表示のウィンドウで動作し、ログオフか再起動で止まります。
-
-SKK クライアントには、ホストに `127.0.0.1`、ポートにサーバのポート、文字コードにサーバの `-Encoding` と同じものを指定します。
-
-| `start-server.ps1` の引数 | 意味 | 既定値 |
-|---|---|---|
-| `-Port` | 待ち受けポート | `1178` |
-| `-Encoding` | 要求と応答の文字コード(`utf-8` または `euc-jp`) | `utf-8` |
-| `-LogDir` | ログの出力先。指定したときだけ、読みの長さと処理時間を記録する(読みそのものは記録しない) | なし |
-| `-Exe` | 起動する実行ファイル | `dist\mozc_skkserv.exe` |
-
-`mozc_skkserv.exe` に直接渡せるフラグは次のとおりです。
 
 | フラグ | 意味 | 既定値 |
 |---|---|---|
-| `--skkserv_port` | 待ち受けポート | `1178` |
-| `--skkserv_encoding` | `utf-8` または `euc-jp` | `utf-8` |
-| `--skkserv_max_candidates` | 1 回の応答に含める候補数の上限 | `12` |
-| `--skkserv_verbose` | 読みの長さ、候補数、処理時間を標準出力に出す | 無効 |
+| `--port` | 待ち受けポート | `1178` |
+| `--encoding` | 要求と応答の文字コード(`utf-8` または `euc-jp`) | `utf-8` |
+| `--max_candidates` | 1 回の応答に含める候補数の上限 | `12` |
+| `--verbose` | 問い合わせのたびに、読みの長さ、候補数、処理時間を出す | 無効 |
+
+ログオン時、ウィンドウを出さずに起動するには、`shell:startup` のフォルダに、ショートカットを作ります。リンク先を `powershell.exe` にし、引数を次のようにします(`C:\path\to` は、`mozc_skkserv.exe` を置いた場所)。
+
+```
+-NoProfile -WindowStyle Hidden -Command "Start-Process 'C:\path\to\mozc_skkserv.exe' -ArgumentList '--port=1178' -WindowStyle Hidden"
+```
+
+SKK クライアントには、ホストに `127.0.0.1`、ポートにサーバのポート、文字コードにサーバの `--encoding` と同じものを指定します。
 
 ## プロトコル
 
@@ -80,7 +70,7 @@ cd ..\..
 .\scripts\build.ps1
 ```
 
-成果物は `dist\mozc_skkserv.exe` と `dist\licenses`(ライセンス文書)で、出力先は `-OutDir` で変えられます。
+`dist\` に`mozc_skkserv.exe` とライセンス文書(`LICENSE`、`LICENSE.mozc`、`THIRD_PARTY_NOTICES.txt`)が作られます。出力先は `-OutDir` で変えられます。
 
 ## テスト
 
@@ -102,3 +92,5 @@ python tests/test_euc_jp.py tmp\check\euc_jp_check.exe
 mozc-skkserv のライセンスは BSD-3-Clause です([LICENSE](LICENSE))。
 
 実行ファイルには、Mozc と Mozc の辞書データ、いくつかのライブラリが含まれます。それぞれのライセンスは、[LICENSE.mozc](LICENSE.mozc) と [licenses/THIRD_PARTY_NOTICES.txt](licenses/THIRD_PARTY_NOTICES.txt) にあります。
+
+このプロジェクトは Google および Mozc とは関係のない、個人によるものです。
